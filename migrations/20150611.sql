@@ -1,0 +1,1 @@
+ALTER TABLE pos_order ADD COLUMN "reportedDate" date;
