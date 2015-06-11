@@ -5,9 +5,9 @@ from rest_framework import serializers
 
 
 class EmployeeSerializer(serializers.HyperlinkedModelSerializer):
-    name = serializers.Field()
-    username = serializers.Field()
-    userId = serializers.Field()
+    name = serializers.ReadOnlyField()
+    username = serializers.ReadOnlyField()
+    userId = serializers.ReadOnlyField()
 
     class Meta:
         model = Employee
@@ -26,42 +26,48 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'url', 'name')
 
 class TableSerializer(serializers.HyperlinkedModelSerializer):
-    parentId = serializers.Field()
+    parentId = serializers.ReadOnlyField()
 
     class Meta:
         model = Table
         fields = ('id', 'number', 'nickname', 'taken', 'parent', 'booked', 'parentId')
 
 class ProductSerializer(serializers.HyperlinkedModelSerializer):
-    categoryId = serializers.Field()
-    categoryNeatName = serializers.Field()
+    categoryId = serializers.ReadOnlyField()
+    categoryNeatName = serializers.ReadOnlyField()
 
     class Meta:
         model = Product
         fields = ('id', 'name', 'description', 'categoryId', 'price', 'availability', 'availabilityUpdated', 'order', 'categoryNeatName', 'available')
 
 class OrderSerializer(serializers.HyperlinkedModelSerializer):
-    tableId = serializers.Field()
-    operatedById = serializers.Field()
+    table = serializers.PrimaryKeyRelatedField(queryset=Table.objects.all())
+    operatedBy = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    openedBy = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    operatedById = serializers.ReadOnlyField()
+    items = serializers.ReadOnlyField()
 
     class Meta:
         model = Order
-        fields = ('id', 'tableId', 'table', 'total', 'discount', 'discountReason', 'notes', 'status', 'openedBy', 'operatedById', 'fis')
+        fields = ('id', 'table', 'total', 'discount', 'discountReason', 'notes', 'status', 'openedBy', 'operatedBy', 'operatedById', 'fis', 'items', 'reportedDate')
 
 class OrderItemSerializer(serializers.HyperlinkedModelSerializer):
-    orderId = serializers.Field()
-    productId = serializers.Field()
-    productName = serializers.Field()
-    productDesc = serializers.Field()
-    productPrice = serializers.Field()
-    tableName = serializers.Field()
-    categoryType = serializers.Field()
-    categoryNeatName = serializers.Field()
-    waiter = serializers.Field()
+    productId = serializers.ReadOnlyField()
+    productName = serializers.ReadOnlyField()
+    productDesc = serializers.ReadOnlyField()
+    productPrice = serializers.ReadOnlyField()
+    tableName = serializers.ReadOnlyField()
+    categoryType = serializers.ReadOnlyField()
+    categoryNeatName = serializers.ReadOnlyField()
+    waiter = serializers.ReadOnlyField()
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all())
 
     class Meta:
         model = OrderItem
-        fields = ('id', 'orderId', 'order', 'productId', 'productName', 'productPrice', 'product', 'quantity', 'changed', 'wasted', 'wastedReason', 'addedBy', 'sent', 'tableName', 'categoryType', 'categoryNeatName', 'waiter', 'cooked', 'comment', 'entered', 'productDesc', 'reduced', 'price')
+        fields = ('id', 'order', 'productId', 'productName', 'productPrice', 'product', 'quantity', 'changed', 'wasted', 'wastedReason', 'addedBy', 'sent', 'tableName', 'categoryType', 'categoryNeatName', 'waiter', 'cooked', 'comment', 'entered', 'productDesc', 'reduced', 'price')
+
+
 
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):

@@ -95,13 +95,13 @@ DATABASES = {
 
 LANGUAGE_CODE = 'bg-bg'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Sofia'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 REST_FRAMEWORK = {

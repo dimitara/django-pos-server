@@ -109,7 +109,7 @@ class Order(models.Model):
     status = models.BooleanField()
     fis = models.BooleanField(default=False)
     reported = models.BooleanField(default=False)
-
+    reportedDate = models.DateTimeField(blank=True, null=True)
 
     openedBy = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='openedBy')
     closedBy = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='closedBy', blank=True, null=True)
@@ -122,6 +122,10 @@ class Order(models.Model):
     def _operatedBy(self):
         return self.operatedBy.id
     operatedById = property(_operatedBy)
+
+    def _orderItems(self):
+        return set(orderItem.id for orderItem in OrderItem.objects.filter(order__id=self.id))
+    items = property(_orderItems)
 
     def save(self, *args, **kwargs):
         self.operatedBy = self.openedBy
@@ -182,6 +186,8 @@ class OrderItem(models.Model):
 
         if self.sent and not self.changed:
             self.changed = datetime.utcnow().replace(tzinfo=utc)
+        else:
+            self.sent = True
 
         #self.operatedBy = self.openedBy
         super(OrderItem, self).save(*args, **kwargs)

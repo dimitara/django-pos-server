@@ -11,11 +11,12 @@ from pos.serializers import EmployeeSerializer, UserSerializer, GroupSerializer,
 
 from django import template
 from django.shortcuts import render, render_to_response
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db import models
 from django.db.models import Q, Count, Sum
 
 from datetime import datetime, timedelta
+from django.utils import timezone
 import csv
 
 try:
@@ -91,7 +92,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows products to be viewed or edited.
     """
-    queryset = OrderItem.objects.all()
+    queryset = OrderItem.objects.all().filter(order__status=False)
     serializer_class = OrderItemSerializer
 
 def pos(request):
@@ -202,6 +203,87 @@ def report_service(request):
     })
 
     return render_to_response(['pos/report_service.html'], c)
+
+def current_report(request):
+    w = None
+
+    if request.GET.has_key('w'):
+        w = request.GET['w']
+
+    if w == None: return JsonResponse({'error':True, 'message': u'missing user'})
+
+    orders = models.get_model('pos', 'Order').objects.all()
+    orders = orders.filter(operatedBy=w).filter(reported=False)
+
+    waiter = models.get_model('auth', 'user').objects.all().get(id=int(w))
+
+    total = 0
+    for o in orders:
+        if o.status == False:
+            return JsonResponse({'error':True, 'message': u'opened orders'})
+        total += o.total
+
+    dt = timezone.now()
+    dt = datetime(dt.year, dt.month, dt.day)
+
+    return JsonResponse({'total':total, 'error': False, 'count': len(orders), 'date': dt})
+
+def generate_current_report(request):
+    w = None
+
+    if request.GET.has_key('w'):
+        w = request.GET['w']
+
+    if w == None: return JsonResponse({'error':True, 'message': u'missing user'})
+
+    orders = models.get_model('pos', 'Order').objects.all()
+    orders = orders.filter(operatedBy=w).filter(reported=False)
+
+    waiter = models.get_model('auth', 'user').objects.all().get(id=int(w))
+
+    total = 0
+    for o in orders:
+        if o.status == False:
+            return JsonResponse({'error':True, 'message': u'opened orders'})
+        total += o.total
+
+    error = False
+    details = None
+
+    try:
+        printReport(waiter.first_name, total)
+    except Exception, err:
+        error = True
+        details = 'printer error'
+
+        #return JsonResponse({'error':True, 'message': u'printer problems', 'details': err})
+        pass
+
+    dt = timezone.now()
+    dt = datetime(dt.year, dt.month, dt.day)
+
+    for o in orders:
+        o.reported = True
+        o.reportedDate = dt
+        o.save()
+
+    return JsonResponse({'total':total, 'error': error, 'count': len(orders), 'details': details})    
+
+def waiter_reports(request):
+    w = None
+
+    if request.GET.has_key('w'):
+        w = request.GET['w']
+
+    if w == None: return JsonResponse({'error':True, 'message': u'missing user'})
+
+    waiter = models.get_model('auth', 'user').objects.all().get(id=int(w))
+
+    orders = models.get_model('pos', 'Order').objects.all().filter(operatedBy=waiter).annotate(Count('reportedDate'))
+
+    for o in orders: print o.reportedDate
+
+    return JsonResponse({'error': False, 'orders': len(orders), 'name': waiter.username})
 
 def report_waiter(request):
     w = None

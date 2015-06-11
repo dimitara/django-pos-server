@@ -25,8 +25,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('__unicode__', 'openedBy', 'total','discount','closed', 'reported')
-    list_filter = ('openedBy', 'closed', 'reported')
+    list_display = ('__unicode__', 'openedBy', 'total','discount','closed', 'reported', 'reportedDate')
+    list_filter = ('openedBy', 'closed', 'reported', 'reportedDate')
 
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('addedBy','product','quantity','tableName','changed',)
