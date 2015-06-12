@@ -44,6 +44,7 @@ urlpatterns = patterns('',
     url(r'^current_report/', views.current_report, name="current_report"),
     url(r'^generate_current_report', views.generate_current_report, name="generate_current_report"),
     url(r'^waiter_reports', views.waiter_reports, name="waiter_reports"),
+    url(r'^daily_waiter_report', views.daily_waiter_report, name="daily_waiter_report"),
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT, 'show_indexes': True}),

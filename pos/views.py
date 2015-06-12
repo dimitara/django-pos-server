@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models import Q, Count, Sum
 
 from datetime import datetime, timedelta
+import time
 from django.utils import timezone
 import csv
 
@@ -277,13 +278,53 @@ def waiter_reports(request):
 
     if w == None: return JsonResponse({'error':True, 'message': u'missing user'})
 
-    waiter = models.get_model('auth', 'user').objects.all().get(id=int(w))
+    waiter = models.get_model('pos', 'employee').objects.all().get(id=int(w))
 
-    orders = models.get_model('pos', 'Order').objects.all().filter(operatedBy=waiter).annotate(Count('reportedDate'))
+    orders = models.get_model('pos', 'Order').objects.all().filter(operatedBy=waiter.user.id).values('reportedDate').annotate(reportDate=Count('reportedDate'))
 
-    for o in orders: print o.reportedDate
+    return JsonResponse({'error': False, 'reports': map(lambda o: o['reportedDate'], orders), 'name': waiter.user.username})
 
-    return JsonResponse({'error': False, 'orders': len(orders), 'name': waiter.username})
+def daily_waiter_report(request):
+    w = None
+    d = None
+
+    if request.GET.has_key('w'):
+        w = request.GET['w']
+
+    if w == None: return JsonResponse({'error':True, 'message': u'missing user'})
+
+    if request.GET.has_key('d'):
+        d = request.GET['d']
+
+    waiter = models.get_model('pos', 'employee').objects.all().get(id=int(w))
+
+    if d == None: return JsonResponse({'error':True, 'message': u'missing date'})
+
+    try:
+        d = datetime.strptime(d, "%Y-%m-%dT%H:%M:%S")
+    except:
+        return JsonResponse({'error':True, 'message': u'invalid date'})
+
+    orders = models.get_model('pos', 'Order').objects.all().filter(operatedBy=waiter.user.id).filter(reportedDate=d)    
+
+    total = sum(map(lambda o: o.total, orders))
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="report_orders_%s_%s.csv"' % (d.strftime('%Y_%m_%d'), waiter.user.first_name.encode('utf-8', 'ignore'))
+    writer = csv.writer(response)
+    writer.writerow([u'Маса'.encode('utf-8', 'ignore'), u'Серв.'.encode('utf-8', 'ignore'), u'Дата'.encode('utf-8', 'ignore'), u'Общо Цена'.encode('utf-8', 'ignore')])
+    writer.writerow(["","", "", ""])
+
+    for order in orders:
+        writer.writerow([order.table.nickname.encode('utf-8', 'ignore'), order.operatedBy.first_name.encode('utf-8', 'ignore'), order.closed, order.total])
+
+    writer.writerow(["","", "", ""])
+    writer.writerow(["","", "", ""])
+    
+    writer.writerow([u'Тотал'.encode('utf-8', 'ignore'),"", "", total])
+
+    return response
+
 
 def report_waiter(request):
     w = None
