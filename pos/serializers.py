@@ -62,6 +62,7 @@ class OrderItemSerializer(serializers.HyperlinkedModelSerializer):
     waiter = serializers.ReadOnlyField()
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all())
+    addedBy = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = OrderItem
